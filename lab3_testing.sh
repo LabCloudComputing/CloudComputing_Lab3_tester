@@ -694,28 +694,6 @@ function send_get_command
 	printf -v get_result "%s" "$retval_get"
 }
 
-# function send_get_command_ultimate_version
-# {
-# 	key_len=$1
-# 	key=$2
-
-# 	printf -v get_command "*2\r\n\$3\r\nGET\r\n\$${key_len}\r\n${key}\r\n"
-# 	for (( i=0; i<$ERROR_RETRY_TIMES; i++ ))
-# 	do
-# 		retval_get=`printf "$get_command" | nc -w ${NC_TIMEOUT} 192.168.66.202 8003`
-
-# 	    if [[ $retval_get =~ $standard_error ]]
-# 	    then
-# 	    	sleep 0.5
-# 	    	continue
-# 	    else
-# 	    	break
-# 	    fi
-# 	done
-
-# 	printf -v get_result "%s" "$retval_get"
-# }
-
 del_1_result=""
 function send_del_command_1
 {

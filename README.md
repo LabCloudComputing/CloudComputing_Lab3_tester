@@ -7,7 +7,7 @@ Lab3 Tester
 
 # Usage of test scripts
 
-`./lab3_testing.sh ./Lab3 your_sudo_password result_folder version`
+`./lab3_testing.sh [source_folder] [your_sudo_password] [result_folder] [version]`
 
 For example:
 `./lab3_testing.sh ./Lab3 XXXXXX ./Lab3 1`
@@ -43,6 +43,8 @@ Test items 10 [ PASSED ]
 
 - **Naming of execution files:** If you are implementing a storage system using the 2pc protocol, please configure your executable file as **kvstore2pcsystem**; If you are implementing a storage system using the raft protocol, please name your executable file **kvstoreraftsystem**.
 
+- **Programming Language:** The testing script will automatically detect the programming language you are using. Currently, the testing script can only detect C/C++, Java, and Python. If you use other programming languages, the default execution method will be the same as C/C++.
+
 - **Configuration files:** You need to configure the startup configuration file as described in the laboratory guide, otherwise it will cause the test to fail.
   
   - Sample coordinator configuration file(**basic**):
@@ -68,7 +70,7 @@ Test items 10 [ PASSED ]
     participant_info 127.0.0.1:8004
     ```
   
-  - ample participant configuration file(**basic**):
+  - Sample participant configuration file(**basic**):
     
     ```tsconfig
     !
@@ -103,6 +105,8 @@ Test items 10 [ PASSED ]
     follower_info 127.0.0.1:8002
     follower_info 127.0.0.1:8003
     ```
+
+- **For advanced version:** If you implement a storage system using the Raft protocol, the testing script will not know who the leader is at the beginning and will default to configuring the first follower as the leader (i.e., sending messages to this process). If this process is not the leader, the request will be ignored, and the leader's information will be returned in the format "<ip>:<port>", such as "127.0.0.1:8001".
 
 # Scoring criteria
 
