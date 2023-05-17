@@ -8,6 +8,8 @@
 #     Example: ./lab3_testing.sh ./Lab3 XXXXXX ./Lab3 1                                                  # 
 #                                                                                                        #
 #     Author: Fusheng Lin(2019) Bowei Chen(2020) Zequn Cheng(2021) Haoxiang Pan(2023)                    #
+#     																									 #
+# 	  Advisor: Guo Chen																					 #
 #			                                                                                             #
 #     Last Modified Date: 2023/5/8                                                                       #
 #                                                                                                        #
@@ -120,35 +122,35 @@ followers_config_path=(${LAB3_ABSOLUTE_PATH}"/follower1.conf" \
 function generate_config_files
 {
 	if [ $VERSION -eq 1 ]; then
-		echo -e "mode coordinator\n"\
-				"coordinator_info 192.168.66.101:8001\n"\
-				"participant_info 192.168.66.201:8002\n"\
-				"participant_info 192.168.66.202:8003\n"\
-				"participant_info 192.168.66.203:8004\n" > ${coordinator_config_path}
+		echo -e "mode coordinator" > ${coordinator_config_path}
+		echo -e	"coordinator_info 192.168.66.101:8001" >> ${coordinator_config_path}
+		echo -e "participant_info 192.168.66.201:8002" >> ${coordinator_config_path}
+		echo -e	"participant_info 192.168.66.202:8003" >> ${coordinator_config_path}
+		echo -e	"participant_info 192.168.66.203:8004" >> ${coordinator_config_path}
 
-		echo -e "mode participant\n"\
-				"coordinator_info 192.168.66.101:8001\n"\
-				"participant_info 192.168.66.201:8002\n" > ${participants_config_path[0]}
+		echo -e "mode participant" > ${participants_config_path[0]}
+		echo -e	"coordinator_info 192.168.66.101:8001" >> ${participants_config_path[0]}
+		echo -e	"participant_info 192.168.66.201:8002" >> ${participants_config_path[0]}
 
-		echo -e "mode participant\n"\
-				"coordinator_info 192.168.66.101:8001\n"\
-				"participant_info 192.168.66.202:8003\n" > ${participants_config_path[1]}
+		echo -e "mode participant" > ${participants_config_path[1]}
+		echo -e "coordinator_info 192.168.66.101:8001" >> ${participants_config_path[1]}
+		echo -e	"participant_info 192.168.66.202:8003" >> ${participants_config_path[1]}
 
-		echo -e "mode participant\n"\
-				"coordinator_info 192.168.66.101:8001\n"\
-				"participant_info 192.168.66.203:8004\n" > ${participants_config_path[2]}
+		echo -e "mode participant" > ${participants_config_path[2]}
+		echo -e	"coordinator_info 192.168.66.101:8001" >> ${participants_config_path[2]}
+		echo -e	"participant_info 192.168.66.203:8004" >> ${participants_config_path[2]}
 	else 
-		echo -e "follower_info 192.168.66.201:8001\n"\
-				"follower_info 192.168.66.202:8002\n"\
-				"follower_info 192.168.66.203:8003\n" > ${followers_config_path[0]}
+		echo -e "follower_info 192.168.66.201:8001" > ${followers_config_path[0]}
+		echo -e	"follower_info 192.168.66.202:8002" >> ${followers_config_path[0]}
+		echo -e	"follower_info 192.168.66.203:8003" >> ${followers_config_path[0]}
 
-		echo -e "follower_info 192.168.66.202:8002\n"\
-				"follower_info 192.168.66.201:8001\n"\
-				"follower_info 192.168.66.203:8003\n" > ${followers_config_path[1]}
+		echo -e "follower_info 192.168.66.202:8002" > ${followers_config_path[1]}
+		echo -e	"follower_info 192.168.66.201:8001" >> ${followers_config_path[1]}
+		echo -e	"follower_info 192.168.66.203:8003" >> ${followers_config_path[1]}
 
-		echo -e "follower_info 192.168.66.203:8003\n"\
-				"follower_info 192.168.66.201:8001\n"\
-				"follower_info 192.168.66.202:8002\n" > ${followers_config_path[2]}
+		echo -e "follower_info 192.168.66.203:8003" > ${followers_config_path[2]}
+		echo -e "follower_info 192.168.66.201:8001" >> ${followers_config_path[2]}
+		echo -e "follower_info 192.168.66.202:8002" >> ${followers_config_path[2]}
 	fi
 }
 
@@ -1121,7 +1123,7 @@ function show_test_result
 		fi
 	done
 
-	if [[ $total_scor -eq 14 ]]
+	if [[ $total_score -eq 14 ]]
 	then
 		total_score=15
 	fi
