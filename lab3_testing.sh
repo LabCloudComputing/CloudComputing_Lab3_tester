@@ -11,7 +11,7 @@
 #     																									 #
 # 	  Advisor: Guo Chen																					 #
 #			                                                                                             #
-#     Last Modified Date: 2023/5/8                                                                       #
+#     Last Modified Date: 2023/5/22                                                                      #
 #                                                                                                        #
 ##########################################################################################################
 
@@ -25,6 +25,12 @@ PASSWORD="$2"
 LAB3_TEST_RESULT_SAVE_PATH="$3"
 VERSION="$4"                       # 1: 2pc, 2: raft
 
+if [[ -z "$1" || -z "$2" || -z "$3" || -z "$4" ]]; then
+  	echo -e "Usage: ./lab3_testing.sh [source_folder] [your_sudo_password] [result_folder] [version(1:2pc 2:raft)]"
+	echo -e "Example: ./lab3_testing.sh ./Lab3 XXXXXX ./Lab3 1"
+  	exit 1
+fi
+
 # Coordinator's configuration
 COORDINATOR_IP=192.168.66.101
 COORDINATOR_PORT=8001
@@ -36,13 +42,13 @@ follower_ip=(192.168.66.201\
 follower_port=(8001\
 			   8002\
 			   8003)
-LEADER_IP=$follower_ip[0]
-LEADER_PORT=$follower_port[0]
+LEADER_IP=${follower_ip[0]}
+LEADER_PORT=${follower_port[0]}
 
 # Experimental environment configuration
 EXECUTABLE_FILE_NAME=""
 NC_TIMEOUT=5
-ERROR_RETRY_TIMES=10
+ERROR_RETRY_TIMES=3
 START_RETYR_TIMES=$[1 * 5]         # 5 seconds
 START_COORDINATOR_ONLY=1
 START_COORDINATOR_AND_ALL_PARTICIPANTS=2
@@ -432,12 +438,12 @@ function run_kvstoresystem_robustly_raft
 				start_program $2 ${followers_config_path[$3]}
 				check_background_process_start_status $!
 				retval=$?
-				sleep0.5
+				sleep 0.5
 
 				if [[ $retval -eq $SUCCESS ]]
 				then
 					echo "Run follower[$3] successfully"
-					participants_pid[$3]=$!
+					followers_pid[$3]=$!
 					return $SUCCESS
 				else
 					echo "Run follower[$3]. Retry times: [$j]"
@@ -579,6 +585,14 @@ function kill_two_of_followers
 	done	
 }
 
+function kill_all_of_followers
+{
+	for (( i=0; i<3; i++ ))
+	do
+		kill -9 ${followers_pid[i]}
+	done	
+}
+
 function kill_leader
 {
 	index=${LEADER_PORT: -1}
@@ -696,6 +710,7 @@ function send_get_command
 	printf -v get_result "%s" "$retval_get"
 }
 
+printf -v del_standard_return ":(.*)\r"
 del_1_result=""
 function send_del_command_1
 {
@@ -709,24 +724,22 @@ function send_del_command_1
 			retval_del1=`printf "$del_command_1" | nc -w ${NC_TIMEOUT} ${COORDINATOR_IP} ${COORDINATOR_PORT}`
 		else
 			retval_del1=`printf "$del_command_1" | nc -w ${NC_TIMEOUT} ${LEADER_IP} ${LEADER_PORT}`
-			if [ $? -ne 0 ]; then
-				LEADER_IP=${follower_ip[i]}
-				LEADER_PORT=${follower_port[i]}
+			echo $retval_del1
+			if [[ $retval_del1 =~ $del_standard_return ]]; then
+				break
+			fi
+			if [[ $retval_del1 =~ $standard_error ]]
+	    	then
+				sleep 0.5
 				continue
 			fi
 			if [[ $retval_del1 =~ $leader_infomation ]]; then
 				parse_leader_infomation $retval_del1
 				continue
 			fi
+			LEADER_IP=${follower_ip[i]}
+			LEADER_PORT=${follower_port[i]}
 		fi
-
-	    if [[ $retval_del1 =~ $standard_error ]]
-	    then
-	    	sleep 0.5
-	    	continue
-	    else
-	    	break
-	    fi
 	done
 
 	printf -v del_1_result "%s" "$retval_del1"
@@ -746,24 +759,21 @@ function send_del_command_2
 			retval_del2=`printf "$del_command_2" | nc -w ${NC_TIMEOUT} ${COORDINATOR_IP} ${COORDINATOR_PORT}`
 		else
 			retval_del2=`printf "$del_command_2" | nc -w ${NC_TIMEOUT} ${LEADER_IP} ${LEADER_PORT}`
-			if [ $? -ne 0 ]; then
-				LEADER_IP=${follower_ip[i]}
-				LEADER_PORT=${follower_port[i]}
+			if [[ $retval_del2 =~ $del_standard_return ]]; then
+				break
+			fi
+			if [[ $retval_del2 =~ $standard_error ]]
+	    	then
+				sleep 0.5
 				continue
 			fi
 			if [[ $retval_del2 =~ $leader_infomation ]]; then
 				parse_leader_infomation $retval_del2
 				continue
 			fi
+			LEADER_IP=${follower_ip[i]}
+			LEADER_PORT=${follower_port[i]}
 		fi 
-
-	    if [[ $retval_del2 =~ $standard_error ]]
-	    then
-	    	sleep 0.5
-	    	continue
-	    else
-	    	break
-	    fi
 	done
 
 	printf -v del_2_result "%s" "$retval_del2"
@@ -791,6 +801,8 @@ function test_item1
 	echo "Test item 1. Test point: Run kvstore2pcsystem."
 
 	run_kvstoresystem_robustly $START_COORDINATOR_AND_ALL_PARTICIPANTS
+
+	sleep 5
 
 	retval=$?
 	if [[ $retval -eq $SUCCESS ]]
@@ -832,7 +844,7 @@ function test_item3
 	echo "Test item 3. Test point: Get the value of key."
 
 	send_set_command 9 item3_key 11 item3_value
-	sleep 1
+	sleep 3
 	if [ $VERSION -eq 1 ]; then
 		kill_and_restart_coordinator_robustly
 	else 
@@ -883,8 +895,15 @@ function test_item5
 	echo "Test item 5. Test point: If the DEL command executed, return the number of keys that were removed."
 
 	send_set_command 11 item5_key_1 13 item5_value_1
+
+	sleep 1
+
 	send_set_command 11 item5_key_2 13 item5_value_2
+
+	sleep 1
 	send_del_command_2 11 item5_key_1 11 item5_key_2
+
+	sleep 1
 
 	if [[ $del_2_result = $standard_item5 ]]
 	then
@@ -906,8 +925,15 @@ function test_item6
 	     " it should overwrite the value of the existing entry,"
 
 	send_set_command 9 item6_key 11 item6_value
+
+	sleep 1
 	send_set_command 9 item6_key 15 item6_value_new
+
+	sleep 1
+
 	send_get_command 9 item6_key
+
+	sleep 1
 
 	if [[ $get_result = $standard_item6 ]]
 	then
@@ -928,8 +954,16 @@ function test_item7
 	echo "Test item 7. Test point: Correctness testing of DEL command."
 
 	send_set_command 9 item7_key 11 item7_value
+
+	sleep 1
+
 	send_del_command_1 9 item7_key
+
+	sleep 1
+
 	send_get_command 9 item7_key
+
+	sleep 1
 
 	if [[ $get_result = $standard_item7 ]]
 	then
@@ -952,15 +986,26 @@ function test_item8
 	echo "Test item 8. Test point: Kill one of the store processes."
 
 	send_set_command 9 item8_key 17 item8_key_value_1
+
+	sleep 1
+
 	send_set_command 9 item8_key 17 item8_key_value_2
+
+	sleep 1
 	if [ $VERSION -eq 1 ]; then
 		kill_one_of_participants
+		sleep 2
 	else 
 		kill_one_of_followers
 		sleep 5
 	fi
 	send_set_command 9 item8_key 17 item8_key_value_3
+
+	sleep 1
+
 	send_get_command 9 item8_key
+
+	sleep 1
 
 	if [[ $get_result = $standard_item8 ]]
 	then
@@ -982,7 +1027,11 @@ function test_item9
 	echo "Test item 9. Test point: Kill all storage proccesses."
 
 	send_set_command 9 item9_key 17 item9_key_value_1
+
+	sleep 1
 	send_set_command 9 item9_key 17 item9_key_value_2
+
+	sleep 1
 	if [ $VERSION -eq 1 ]; then
 		kill_all_participants
 	else 
@@ -1016,7 +1065,11 @@ function test_item10
 	restart_kvstoresystem_if_down_abnormally
 
 	send_set_command 12 item10_key_1 20 item10_key_1_value_1
+
+	sleep 1
 	send_set_command 12 item10_key_2 20 item10_key_2_value_2
+
+	sleep 1
 
 	if [ $VERSION -eq 1 ]; then
 		kill_two_of_participants
@@ -1031,6 +1084,8 @@ function test_item10
 	sleep 10
 
 	send_get_command 12 item10_key_2
+
+	sleep 1
 
 	get_success=0
 
@@ -1087,7 +1142,11 @@ function cloud_roll_up
 # Clear testing environment
 function clean_up
 {
-	kill_coordinator_and_all_participants
+	if [ $VERSION -eq 1 ]; then
+		kill_coordinator_and_all_participants
+	else
+		kill_all_of_followers
+	fi
 	remove_virtual_nics
 	clean_up_config_files
 }
