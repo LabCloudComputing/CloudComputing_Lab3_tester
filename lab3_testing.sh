@@ -340,7 +340,7 @@ function run_kvstoresystem_robustly_2pc
 				start_program $2 ${participants_config_path[$3]}
 				check_background_process_start_status $!
 				retval=$?
-				sleep0.5
+				sleep 0.5
 
 				if [[ $retval -eq $SUCCESS ]]
 				then
@@ -724,15 +724,17 @@ function send_del_command_1
 			retval_del1=`printf "$del_command_1" | nc -w ${NC_TIMEOUT} ${COORDINATOR_IP} ${COORDINATOR_PORT}`
 		else
 			retval_del1=`printf "$del_command_1" | nc -w ${NC_TIMEOUT} ${LEADER_IP} ${LEADER_PORT}`
-			echo $retval_del1
-			if [[ $retval_del1 =~ $del_standard_return ]]; then
-				break
-			fi
-			if [[ $retval_del1 =~ $standard_error ]]
-	    	then
-				sleep 0.5
-				continue
-			fi
+		fi
+
+		if [[ $retval_del1 =~ $del_standard_return ]]; then
+			break
+		fi
+		if [[ $retval_del1 =~ $standard_error ]]
+		then
+			sleep 0.5
+			continue
+		fi
+		if [ $VERSION -eq 2 ]; then
 			if [[ $retval_del1 =~ $leader_infomation ]]; then
 				parse_leader_infomation $retval_del1
 				continue
@@ -759,21 +761,24 @@ function send_del_command_2
 			retval_del2=`printf "$del_command_2" | nc -w ${NC_TIMEOUT} ${COORDINATOR_IP} ${COORDINATOR_PORT}`
 		else
 			retval_del2=`printf "$del_command_2" | nc -w ${NC_TIMEOUT} ${LEADER_IP} ${LEADER_PORT}`
-			if [[ $retval_del2 =~ $del_standard_return ]]; then
-				break
-			fi
-			if [[ $retval_del2 =~ $standard_error ]]
-	    	then
-				sleep 0.5
-				continue
-			fi
+		fi 
+
+		if [[ $retval_del2 =~ $del_standard_return ]]; then
+			break
+		fi
+		if [[ $retval_del2 =~ $standard_error ]]
+	    then
+			sleep 0.5
+			continue
+		fi
+		if [ $VERSION -eq 2 ]; then
 			if [[ $retval_del2 =~ $leader_infomation ]]; then
 				parse_leader_infomation $retval_del2
 				continue
 			fi
 			LEADER_IP=${follower_ip[i]}
 			LEADER_PORT=${follower_port[i]}
-		fi 
+		fi
 	done
 
 	printf -v del_2_result "%s" "$retval_del2"
